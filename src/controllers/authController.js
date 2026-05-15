@@ -83,3 +83,24 @@ export const updateAdminProfile = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+export const setupFirstAdmin = async (req, res) => {
+  try {
+    const { name, email, password, secretKey } = req.body;
+    
+    // Check if any admin exists
+    const adminExists = await User.findOne({ role: 'admin' });
+    if (adminExists) {
+      return res.status(403).json({ message: 'Admin already exists. Use update endpoint.' });
+    }
+    
+    // Verify a master secret key (store in environment variable)
+    if (secretKey !== process.env.MASTER_SECRET) {
+      return res.status(401).json({ message: 'Invalid secret key' });
+    }
+    
+    const admin = await User.create({ name, email, password, role: 'admin' });
+    res.status(201).json({ message: 'Admin created', admin: { id: admin._id, name, email } });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }  
+};
